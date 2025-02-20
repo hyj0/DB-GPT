@@ -169,14 +169,10 @@ class RDBMSConnector(BaseConnector):
 
     def table_simple_info(self):
         """Return table simple info."""
-        _sql = f"""
-                select concat(table_name, "(" , group_concat(column_name), ")")
-                as schema_info from information_schema.COLUMNS where
-                table_schema="{self.get_current_db_name()}" group by TABLE_NAME;
-            """
-        cursor = self.session.execute(text(_sql))
-        results = cursor.fetchall()
-        return results
+        ret = ''
+        for t in self.get_table_names():
+            ret += self.get_show_create_table(t) + '\n'
+        return ret
 
     @property
     def table_info(self) -> str:

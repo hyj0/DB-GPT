@@ -282,8 +282,8 @@ async def editor_chart_run(run_param: dict = Body()):
 
         start_time = time.time() * 1000
 
-        # Execute query with timeout
-        colunms, sql_result = db_conn.query_ex(sql, timeout=30)
+        # Execute query with timeoutn
+        colunms, sql_result = db_conn.query_ex(sql )
 
         # Safely convert and process results
         field_names, chart_values = dashboard_data_loader.get_chart_values_by_data(

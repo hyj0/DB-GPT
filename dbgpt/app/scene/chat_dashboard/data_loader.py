@@ -59,10 +59,13 @@ class DashboardDataLoader:
                 # while there are no datetime and there are no string
                 if string_index == -1 and datetime_index == -1 and id_index == -1:
                     # ignore Null Value in the data
-                    result = [
-                        sum(values for values in data if values is not None)
-                        for data in zip(*datas)
-                    ]
+                    try:
+                        result = [
+                            sum(values for values in data if values is not None and  (isinstance(values, int) or isinstance(values, float)))
+                            for data in zip(*datas)
+                        ]
+                    except Exception as e:
+                        raise e
                     for index, field_name in enumerate(field_names):
                         value_item = ValueItem(
                             name=field_name,
@@ -79,40 +82,61 @@ class DashboardDataLoader:
                         if string_index != -1
                         else (datetime_index if datetime_index != -1 else id_index)
                     )
-                    temp_field_name = field_names[:primary_index]
-                    temp_field_name.extend(field_names[primary_index + 1 :])
+                    #temp_field_name = field_names[:primary_index]
+                    #temp_field_name.extend(field_names[primary_index + 1 :])
+                    temp_field_name = field_names
                     for field_name in temp_field_name:
                         for data in datas:
                             # None Data won't be ok for the chart
                             if not any(item is None for item in data):
-                                value_item = ValueItem(
-                                    name=str(data[primary_index]),
-                                    type=field_name,
-                                    value=str(data[field_names.index(field_name)])
-                                    if not isinstance(
+                                # print("data", data)
+                                logger.info(f"data={data}")
+                                my_value = str(data[field_names.index(field_name)]) \
+                                if not isinstance(
                                         type(data[field_names.index(field_name)]),
                                         (datetime.datetime, datetime.date),
-                                    )
-                                    else str(
+                                ) \
+                                else str(
                                         data[field_names.index(field_name)].strftime(
                                             "%Y%m%d"
                                         )
-                                    ),
                                 )
+                                try:
+                                    value_item = ValueItem(
+                                        name=str(data[field_names.index(field_name)]),
+                                        type=field_name,
+                                        value=my_value,
+                                    )
+                                except Exception as e:
+                                    logger.exception(f"0get_chart_values_by_conn failed:{str(e)}")
+                                    value_item = ValueItem(
+                                        name=str(data[field_names.index(field_name)]),
+                                        type=field_name,
+                                        value=0.0,
+                                    )
+                                    #raise e
                                 values.append(value_item)
 
                             # handle None Data as "0" for number and "19700101" for datetime
                             else:
-                                value_item = ValueItem(
-                                    name=data[string_index],
-                                    type=field_name,
-                                    value="0"
+                                my_value = str(data[field_names.index(field_name)]) \
                                     if not isinstance(
-                                        type(data[field_names.index(field_name)]),
-                                        (datetime.datetime, datetime.date),
+                                    type(data[field_names.index(field_name)]),
+                                    (datetime.datetime, datetime.date),
+                                ) \
+                                    else str(
+                                    data[field_names.index(field_name)].strftime(
+                                        "%Y%m%d"
                                     )
-                                    else "19700101",
                                 )
+                                try:
+                                    value_item = ValueItem(
+                                        name=str(data[string_index]),
+                                        type=field_name,
+                                        value=my_value,
+                                    )
+                                except Exception as e:
+                                    raise e
                                 values.append(value_item)
             return field_names, values
         except Exception as e:
