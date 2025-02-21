@@ -32,7 +32,8 @@ WORKDIR /app
 RUN pip3 install --upgrade pip -i $PIP_INDEX_URL \
     && pip3 install -i $PIP_INDEX_URL ".[$DB_GPT_INSTALL_MODEL]" \
     # install openai for proxyllm
-    && pip3 install -i $PIP_INDEX_URL ".[openai]"
+    && pip3 install -i $PIP_INDEX_URL ".[openai]" \
+    && pip3 uninstall sqlalchemy -y && pip3 install sqlalchemy-doris
 
 # Not install spacy model for now
 #RUN (if [ "${LANGUAGE}" = "zh" ]; \
