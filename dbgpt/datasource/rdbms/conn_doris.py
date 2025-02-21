@@ -118,27 +118,27 @@ class DorisConnector(RDBMSConnector):
 
     def get_show_create_table(self, table_name) -> str:
         """Get show create table."""
-        # cur = self.get_session().execute(
-        #     text(
-        #         f"""show create table {table_name}"""
-        #     )
-        # )
-        # rows = cur.fetchone()
-        # create_sql = rows[1]
-        # return create_sql
-        # 这里是要表描述, 返回建表语句会导致token过长而失败
         cur = self.get_session().execute(
             text(
-                f"SELECT TABLE_COMMENT "
-                f"FROM information_schema.tables "
-                f'where TABLE_NAME="{table_name}" and TABLE_SCHEMA=database()'
+                f"""show create table {table_name}"""
             )
         )
-        table = cur.fetchone()
-        if table:
-            return str(table[0])
-        else:
-            return ""
+        rows = cur.fetchone()
+        create_sql = rows[1]
+        return create_sql
+        # 这里是要表描述, 返回建表语句会导致token过长而失败
+        # cur = self.get_session().execute(
+        #     text(
+        #         f"SELECT TABLE_COMMENT "
+        #         f"FROM information_schema.tables "
+        #         f'where TABLE_NAME="{table_name}" and TABLE_SCHEMA=database()'
+        #     )
+        # )
+        # table = cur.fetchone()
+        # if table:
+        #     return str(table[0])
+        # else:
+        #     return ""
 
     def get_table_comments(self, db_name=None):
         """Get table comments."""
@@ -177,16 +177,9 @@ class DorisConnector(RDBMSConnector):
 
     def table_simple_info(self):
         """Get table simple info."""
-        cursor = self.get_session().execute(
-            text(
-                "SELECT concat(TABLE_NAME,'(',group_concat(COLUMN_NAME,','),');') "
-                "FROM information_schema.columns "
-                "where TABLE_SCHEMA=database() "
-                "GROUP BY TABLE_NAME"
-            )
-        )
-        results = cursor.fetchall()
-        return [x[0] for x in results]
+
+        ret = super().table_simple_info()
+        return ret
 
     def get_indexes(self, table_name):
         """Get table indexes about specified table."""
