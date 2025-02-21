@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, cast
 from urllib.parse import quote
@@ -169,9 +170,42 @@ class RDBMSConnector(BaseConnector):
 
     def table_simple_info(self):
         """Return table simple info."""
+
+        table_names = self.get_table_names()
+        all_table_names = self.get_usable_table_names()
+        if table_names is not None:
+            missing_tables = set(table_names).difference(all_table_names)
+            if missing_tables:
+                raise ValueError(f"table_names {missing_tables} not found in database")
+            all_table_names = table_names
+
+        meta_tables = [
+            tbl
+            for tbl in self._metadata.sorted_tables
+            if tbl.name in set(all_table_names)
+               and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
+        ]
+        table_map = {}
+        for meta_table in meta_tables:
+            table_map[meta_table.name] = meta_table
+
         ret = ''
         for t in self.get_table_names():
             ret += self.get_show_create_table(t) + '\n'
+            if t in table_map:
+                sample = self._get_sample_rows(table_map[t])
+                ret += sample + "\n"
+        prompt_file_path = os.path.join(os.getcwd(), self.get_current_db_name()+".prompt.txt")
+        try:
+            f = open(prompt_file_path, 'r')
+            ret += f.read() + "\n"
+            f.close()
+        except FileNotFoundError as e:
+            logger.error(f"not found prompt file {prompt_file_path}")
+        except Exception as e:
+            logger.error("open prompt file err")
+            raise e
+
         return ret
 
     @property
