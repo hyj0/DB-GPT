@@ -195,6 +195,17 @@ class RDBMSConnector(BaseConnector):
             if t in table_map:
                 sample = self._get_sample_rows(table_map[t])
                 ret += sample + "\n"
+        prompt_file_path = os.path.join(os.getcwd(), "common.prompt.txt")
+        try:
+            f = open(prompt_file_path, 'r')
+            ret += f.read() + "\n"
+            f.close()
+        except FileNotFoundError as e:
+            logger.error(f"not found prompt file {prompt_file_path}")
+        except Exception as e:
+            logger.error("open prompt file err")
+            raise e
+
         prompt_file_path = os.path.join(os.getcwd(), self.get_current_db_name()+".prompt.txt")
         try:
             f = open(prompt_file_path, 'r')
