@@ -10,6 +10,9 @@ from dbgpt.app.scene.chat_dashboard.data_preparation.report_schma import (
     ChartData,
     ReportData,
 )
+from dbgpt.app.scene.exceptions import BaseAppException
+from dbgpt.core import HumanMessage
+from dbgpt.core.interface.message import ViewMessage, AIMessage
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
 
@@ -19,6 +22,7 @@ CFG = Config()
 class ChatDashboard(BaseChat):
     chat_scene: str = ChatScene.ChatDashboard.value()
     report_name: str
+    keep_end_rounds: int = 10
     """Chat Dashboard to generate dashboard chart"""
 
     def __init__(self, chat_param: Dict):
@@ -72,11 +76,38 @@ class ChatDashboard(BaseChat):
         except Exception as e:
             print("db summary find error!" + str(e))
 
+        history_msg = self.current_message.get_history_message()
+
+        his_msg = ""
+        human_msg_idx = 0
+        for idx in range(len(history_msg)):
+            m = history_msg[idx]
+            if isinstance(m, HumanMessage):
+                human_msg_idx = idx
+
+        if human_msg_idx > 0:
+            human_msg_idx = max(0, human_msg_idx-5)
+        for m in history_msg[human_msg_idx:]:
+            if isinstance(m, HumanMessage):
+                his_msg += f"Human:{m.content}\n"
+            elif isinstance(m, ViewMessage):
+                if m.content.find("err:") == 0:
+                    his_msg += f"view:{m.content}\n"
+            elif isinstance(m, AIMessage):
+                content = m.content
+                idx = content.rfind("``json")
+                if idx >= 0:
+                    his_msg += f"ai:{content[idx:]}\n"
+                    # content = content[idx:]
+                    # idx = content[idx:].find("[")
+                    # if idx >= 0:
+
         input_values = {
             "input": self.current_user_input,
             "dialect": self.database.dialect,
             "table_info": self.database.table_simple_info(),
-            "supported_chat_type": self.dashboard_template["supported_chart_type"]
+            "supported_chat_type": self.dashboard_template["supported_chart_type"],
+            "history_message": his_msg
             # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
 
@@ -105,6 +136,8 @@ class ChatDashboard(BaseChat):
             except Exception as e:
                 # TODO 修复流程
                 print(str(e))
+                self.current_message.add_ai_message(message=str(prompt_response))
+                raise BaseAppException(str(e), f"err:{str(e)}")
         return ReportData(
             conv_uid=self.chat_session_id,
             template_name=self.report_name,

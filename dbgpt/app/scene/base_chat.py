@@ -313,6 +313,17 @@ class BaseChat(ABC):
         )
 
     async def nostream_call(self):
+        for i in range(3):
+            try:
+                ret = await self.__nostream_call()
+                return ret
+            except BaseAppException as e:
+                print(f"retry {i}")
+                continue
+            except Exception as e:
+                raise e
+
+    async def __nostream_call(self):
         payload = await self._build_model_request()
         span = root_tracer.start_span(
             "BaseChat.nostream_call", metadata=payload.to_dict()
@@ -330,6 +341,7 @@ class BaseChat(ABC):
         except BaseAppException as e:
             self.current_message.add_view_message(e.view)
             span.end(metadata={"error": str(e)})
+            raise e
         except Exception as e:
             view_message = f"<span style='color:red'>ERROR!</span> {str(e)}"
             self.current_message.add_view_message(view_message)

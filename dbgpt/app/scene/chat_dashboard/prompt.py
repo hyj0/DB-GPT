@@ -30,6 +30,9 @@ Give the correct {dialect} analysis SQL
 {response}
 The important thing is: Please make sure to only return the json string, do not add any other content (for direct processing by the program), and the json can be parsed by Python json.loads
 5. Please use the same language as the "user"
+
+history message:
+{history_message}
 """
 
 RESPONSE_FORMAT = [
@@ -58,6 +61,6 @@ prompt_adapter = AppScenePromptTemplateAdapter(
     template_scene=ChatScene.ChatDashboard.value(),
     stream_out=PROMPT_NEED_STREAM_OUT,
     output_parser=ChatDashboardOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
-    need_historical_messages=False,
+    need_historical_messages=True,
 )
 CFG.prompt_template_registry.register(prompt_adapter, is_default=True)

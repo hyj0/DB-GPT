@@ -30,11 +30,16 @@ initialize_tracer("/tmp/agent_trace.jsonl", create_system_app=True)
 
 async def main():
     from dbgpt.model.proxy.llms.siliconflow import SiliconFlowLLMClient
+    from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 
-    llm_client = SiliconFlowLLMClient(
-        model_alias=os.getenv(
-            "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
-        ),
+    # llm_client = SiliconFlowLLMClient(
+    #     model_alias=os.getenv(
+    #         "SILICONFLOW_MODEL_VERSION", "Qwen/Qwen2.5-Coder-32B-Instruct"
+    #     ),
+    # )
+    llm_client = OpenAILLMClient(
+        api_key=os.getenv("PROXY_API_KEY"),
+        api_base="http://10.9.0.164:8090/v1",
     )
     context: AgentContext = AgentContext(conv_id="test456")
 
