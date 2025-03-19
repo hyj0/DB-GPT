@@ -3,6 +3,7 @@ import { apiInterceptors, newDialogue } from '@/client/api';
 import { STORAGE_INIT_MESSAGE_KET } from '@/utils';
 import { Button, Input } from 'antd';
 import cls from 'classnames';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/router';
 import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,8 +16,10 @@ function ChatInput() {
   const [userInput, setUserInput] = useState<string>('');
   const [isFocus, setIsFocus] = useState<boolean>(false);
   const [isZhInput, setIsZhInput] = useState<boolean>(false);
+  const searchParams = useSearchParams();
 
   const onSubmit = async () => {
+    const app_name = searchParams?.get('app_name') ?? '';
     const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_normal' }));
     if (res) {
       setCurrentDialogInfo?.({
@@ -31,7 +34,7 @@ function ChatInput() {
         }),
       );
       localStorage.setItem(STORAGE_INIT_MESSAGE_KET, JSON.stringify({ id: res.conv_uid, message: userInput }));
-      router.push(`/chat/?scene=chat_normal&id=${res.conv_uid}`);
+      router.push(`/chat/?scene=chat_normal&app_name=${app_name}`);
     }
     setUserInput('');
   };

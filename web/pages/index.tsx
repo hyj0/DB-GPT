@@ -213,7 +213,9 @@ const Playground: NextPage = () => {
                     app_code: item.app_code,
                   }),
                 );
-                router.push(`/chat?scene=${chat_scene}&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
+                router.push(
+                  `/chat?app_name=${item.app_name}&scene=${chat_scene}&id=${res.conv_uid}${model ? `&model=${model}` : ''}`,
+                );
               }
             } else {
               // 自定义应用

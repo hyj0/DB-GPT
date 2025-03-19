@@ -178,6 +178,12 @@ class RDBMSConnector(BaseConnector):
             if missing_tables:
                 raise ValueError(f"table_names {missing_tables} not found in database")
             all_table_names = table_names
+        if hasattr(self, "app_table_list") and len(self.app_table_list) > 0:
+            fix_tables = []
+            for t in all_table_names:
+                if t in self.app_table_list:
+                    fix_tables.append(t)
+            all_table_names = fix_tables
 
         meta_tables = [
             tbl
@@ -191,6 +197,8 @@ class RDBMSConnector(BaseConnector):
 
         ret = ''
         for t in self.get_table_names():
+            if t not in all_table_names:
+                continue
             ret += self.get_show_create_table(t) + '\n'
             if t in table_map:
                 sample = self._get_sample_rows(table_map[t])

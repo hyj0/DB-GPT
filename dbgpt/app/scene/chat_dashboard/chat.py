@@ -15,6 +15,8 @@ from dbgpt.core import HumanMessage
 from dbgpt.core.interface.message import ViewMessage, AIMessage
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
+import os
+import biz
 
 CFG = Config()
 
@@ -46,6 +48,7 @@ class ChatDashboard(BaseChat):
 
         self.top_k: int = 5
         self.dashboard_template = self.__load_dashboard_template(self.report_name)
+        self.ext_info = chat_param['ext_info']
 
     def __load_dashboard_template(self, template_name):
         current_dir = os.getcwd()
@@ -102,10 +105,21 @@ class ChatDashboard(BaseChat):
                     # idx = content[idx:].find("[")
                     # if idx >= 0:
 
+        if "app_name" in self.ext_info and self.ext_info['app_name'] in biz.customBiz:
+            bz = biz.customBiz[self.ext_info['app_name']]
+            self.database.app_table_list = bz.get_table_list()
+            print("app_table_list", self.database.app_table_list)
+            table_info = self.database.table_simple_info()
+            self.database.app_table_list = []
+
+            table_info += "\n" + bz.get_ext_prompt()
+        else:
+            self.database.app_table_list = []
+            table_info = self.database.table_simple_info()
         input_values = {
             "input": self.current_user_input,
             "dialect": self.database.dialect,
-            "table_info": self.database.table_simple_info(),
+            "table_info": table_info,
             "supported_chat_type": self.dashboard_template["supported_chart_type"],
             "history_message": his_msg
             # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)

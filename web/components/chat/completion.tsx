@@ -31,7 +31,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
   const { dbParam, currentDialogue, scene, model, refreshDialogList, chatId, agent, docId } = useContext(ChatContext);
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-
+  const app_name = searchParams?.get('app_name') ?? '';
   const flowSelectParam = (searchParams && searchParams.get('select_param')) ?? '';
   const spaceNameOriginal = (searchParams && searchParams.get('spaceNameOriginal')) ?? '';
 
@@ -71,6 +71,9 @@ const Completion = ({ messages, onSubmit }: Props) => {
       setIsLoading(true);
       await onSubmit(content, {
         select_param: selectParam ?? '',
+        ext_info: {
+          app_name,
+        },
         // incremental,
       });
     } finally {

@@ -86,6 +86,7 @@ const Chat: React.FC = () => {
   const searchParams = useSearchParams();
   const chatId = searchParams?.get('id') ?? '';
   const scene = searchParams?.get('scene') ?? '';
+  const app_name = searchParams?.get('app_name') ?? '';
   const knowledgeId = searchParams?.get('knowledge_id') ?? '';
   const dbName = searchParams?.get('db_name') ?? '';
 
@@ -220,6 +221,9 @@ const Chat: React.FC = () => {
             model_name: modelValue,
             user_input: content,
             ...data,
+            ext_info: {
+              app_name,
+            },
           },
           ctrl,
           chatId,
