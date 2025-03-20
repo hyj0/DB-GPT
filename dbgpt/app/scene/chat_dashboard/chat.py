@@ -49,6 +49,10 @@ class ChatDashboard(BaseChat):
         self.top_k: int = 5
         self.dashboard_template = self.__load_dashboard_template(self.report_name)
         self.ext_info = chat_param['ext_info']
+        if "app_name" in self.ext_info and self.ext_info["app_name"] != "":
+            biz.save_session(chat_param['chat_session_id'], self.ext_info)
+        else:
+            self.ext_info = biz.get_session_extinfo(chat_param['chat_session_id'])
 
     def __load_dashboard_template(self, template_name):
         current_dir = os.getcwd()
