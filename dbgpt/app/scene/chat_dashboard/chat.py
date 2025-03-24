@@ -53,6 +53,10 @@ class ChatDashboard(BaseChat):
             biz.save_session(chat_param['chat_session_id'], self.ext_info)
         else:
             self.ext_info = biz.get_session_extinfo(chat_param['chat_session_id'])
+        if "app_name" in self.ext_info and self.ext_info['app_name'] in biz.customBiz:
+            self.bz = biz.customBiz[self.ext_info['app_name']]
+        else:
+            self.bz = None
 
     def __load_dashboard_template(self, template_name):
         current_dir = os.getcwd()
@@ -109,14 +113,13 @@ class ChatDashboard(BaseChat):
                     # idx = content[idx:].find("[")
                     # if idx >= 0:
 
-        if "app_name" in self.ext_info and self.ext_info['app_name'] in biz.customBiz:
-            bz = biz.customBiz[self.ext_info['app_name']]
-            self.database.app_table_list = bz.get_table_list()
+        if self.bz:
+            self.database.app_table_list = self.bz.get_table_list()
             print("app_table_list", self.database.app_table_list)
             table_info = self.database.table_simple_info()
             self.database.app_table_list = []
 
-            table_info += "\n" + bz.get_ext_prompt()
+            table_info += "\n" + self.bz.get_ext_prompt()
         else:
             self.database.app_table_list = []
             table_info = self.database.table_simple_info()
@@ -136,6 +139,12 @@ class ChatDashboard(BaseChat):
         chart_datas: List[ChartData] = []
         dashboard_data_loader = DashboardDataLoader()
         for chart_item in prompt_response:
+            try:
+                self.bz.check_sql(chart_item.sql)
+            except Exception as e:
+                print(str(e))
+                self.current_message.add_ai_message(message=str(prompt_response))
+                raise BaseAppException(str(e), f"err:{str(e)}")
             try:
                 field_names, values = dashboard_data_loader.get_chart_values_by_conn(
                     self.database, chart_item.sql

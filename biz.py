@@ -1,6 +1,14 @@
 import json
 import os.path
+import re
 
+import jpype
+from jpype import JClass
+
+jpype.startJVM(classpath=["sql-parse.jar"])
+# 加载 Java 类
+MainClass = JClass("com.example.ob.sql.Main")
+main_instance = MainClass()
 
 class Biz:
     def get_table_list(self) -> list[str]:
@@ -9,11 +17,45 @@ class Biz:
     def get_ext_prompt(self) -> str:
         return ""
 
+    def check_sql(self, sql) -> bool:
+        # check sql join
+        pass
+
+    def get_sql_er(self, sql):
+        if not bool(re.match(r'^\s*select', sql, re.IGNORECASE)):
+            return {}
+        global main_instance
+        result = main_instance.parseSelectSql(sql)
+        return json.loads(str(result))
 
 class PhysicalInstant(Biz):
     def __init__(self):
+        # join: table1.column1 = table2.column2
+        self.er_str = '''
+        '''
         pass
 
+
+    def check_sql(self, sql) -> bool:
+        er_ret = self.get_sql_er(sql)
+        print(er_ret)
+        er_map = er_ret["relationMap"]
+        er_list = er_ret["relationList"]
+        for t1,m1 in er_map.items():
+            for c1, l2 in m1.items():
+                for m2 in l2:
+                    t2 = m2["left"]
+                    c2 = m2["right"]
+                    if t1 < t2:
+                        er_str = f"{t1}.{c1} = {t2}.{c2}"
+                    else:
+                        er_str = f"{t2}.{c2} = {t1}.{c1}"
+                    print(er_str)
+                    if self.get_ext_prompt().find(er_str) < 0 and self.er_str.find(er_str) < 0:
+                        raise Exception(f"error:{sql} has join:{er_str} no in prompt!")
+        for er_str in er_list:
+            if self.get_ext_prompt().find(er_str) < 0 and self.er_str.find(er_str) < 0:
+                raise Exception(f"error:{sql} has join:{er_str} no in prompt!")
     def get_table_list(self) -> list[str]:
         ret = [
 
@@ -80,3 +122,8 @@ if __name__ == "__main__":
     save_session("123", {"app_name": "456"})
     print(get_session_extinfo("123"))
 
+    pi = PhysicalInstant()
+
+    sql = ("SELECT * FROM users u left join order_info oi on u.uid = oi.uid"
+           " WHERE age > 20")
+    pi.check_sql(sql)
